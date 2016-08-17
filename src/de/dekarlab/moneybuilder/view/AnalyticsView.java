@@ -34,11 +34,15 @@
 
 package de.dekarlab.moneybuilder.view;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
@@ -50,12 +54,17 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.CategoryAxis;
+import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.labels.StandardCategoryItemLabelGenerator;
 import org.jfree.chart.labels.StandardPieSectionLabelGenerator;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PiePlot;
 import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.chart.renderer.category.CategoryItemRenderer;
+import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
@@ -130,6 +139,7 @@ public class AnalyticsView extends Composite {
 		cmbReports.add(App.getGuiProp("report.expenses"));
 		cmbReports.add(App.getGuiProp("report.assets"));
 		cmbReports.add(App.getGuiProp("report.liability"));
+		cmbReports.add(App.getGuiProp("report.profit"));
 		cmbReports.select(0);
 		createChart();
 		// select by default
@@ -168,7 +178,7 @@ public class AnalyticsView extends Composite {
 			}
 		}
 		plot.setLabelBackgroundPaint(Color.white);
-		StandardPieSectionLabelGenerator slbl = new StandardPieSectionLabelGenerator("{0} {2}",
+		StandardPieSectionLabelGenerator slbl = new StandardPieSectionLabelGenerator("{0} {2} ({1})",
 				new DecimalFormat("#,##0"), new DecimalFormat("0%"));
 		plot.setLabelGenerator(slbl);
 		plot.setLabelFont(new Font("Helvetica", Font.PLAIN, 14));
@@ -201,10 +211,81 @@ public class AnalyticsView extends Composite {
 		plot.setBackgroundPaint(Color.white);
 		plot.setBackgroundPaint(Color.white);
 		((NumberAxis) plot.getRangeAxis()).setAutoRangeIncludesZero(false);
+		((CategoryAxis) plot.getDomainAxis()).setMaximumCategoryLabelLines(10);
+		((CategoryAxis) plot.getDomainAxis()).setCategoryLabelPositions(CategoryLabelPositions.DOWN_90);
+		plot.setDomainGridlinesVisible(true);
+		plot.setDomainGridlinePaint(Color.gray);
+		plot.setRangeGridlinePaint(Color.gray);
+		plot.setRangeGridlinesVisible(true);
+		plot.setRangeZeroBaselinePaint(Color.black);
+		plot.setRangeZeroBaselineVisible(true);
 		int color = 0;
 		CategoryItemRenderer renderer = plot.getRenderer();
 		for (int ser = 0; ser < dataset.getColumnCount(); ser++) {
 			renderer.setSeriesPaint(ser, COLORS[color]);
+			renderer.setSeriesStroke(ser, new BasicStroke(4));
+			StandardCategoryItemLabelGenerator gen = new StandardCategoryItemLabelGenerator("{2}",
+					NumberFormat.getInstance(Locale.GERMAN)) {
+				private static final long serialVersionUID = 1L;
+
+				public String generateLabel(CategoryDataset dataset, int series, int item) {
+					if (item % 3 == 0) {
+						return super.generateLabelString(dataset, series, item);
+					} else {
+						return null;
+					}
+				}
+			};
+
+			renderer.setSeriesItemLabelGenerator(ser, gen);
+			renderer.setSeriesItemLabelsVisible(ser, true);
+
+			color++;
+			if (COLORS.length == color) {
+				color = 0;
+			}
+		}
+		return chart;
+	}
+
+	/**
+	 * Create pie chart.
+	 * 
+	 * @param dataset
+	 * @param title
+	 * @return
+	 */
+	protected JFreeChart createBarChart(final CategoryDataset dataset, final String title) {
+		final JFreeChart chart = ChartFactory.createBarChart("", // chart title
+				App.getGuiProp("report.period.lbl"), // domain axis label
+				App.getGuiProp("report.value.lbl"), // range axis label
+				dataset, // data
+				PlotOrientation.VERTICAL, // orientation
+				false, // include legend
+				true, // tooltips
+				false // urls
+		);
+
+		final CategoryPlot plot = (CategoryPlot) chart.getPlot();
+		plot.setNoDataMessage(App.getGuiProp("report.nodata.msg"));
+		plot.setBackgroundPaint(Color.white);
+		((NumberAxis) plot.getRangeAxis()).setAutoRangeIncludesZero(false);
+		((CategoryAxis) plot.getDomainAxis()).setMaximumCategoryLabelLines(10);
+		((CategoryAxis) plot.getDomainAxis()).setCategoryLabelPositions(CategoryLabelPositions.DOWN_90);
+		plot.setDomainGridlinesVisible(true);
+		plot.setDomainGridlinePaint(Color.gray);
+		plot.setRangeGridlinePaint(Color.gray);
+		plot.setRangeGridlinesVisible(true);
+		plot.setRangeZeroBaselinePaint(Color.black);
+		plot.setRangeZeroBaselineVisible(true);
+		int color = 0;
+		((BarRenderer) plot.getRenderer()).setBarPainter(new StandardBarPainter());
+		CategoryItemRenderer renderer = plot.getRenderer();
+		for (int ser = 0; ser < dataset.getColumnCount(); ser++) {
+			renderer.setSeriesPaint(ser, COLORS[color]);
+			renderer.setSeriesItemLabelGenerator(ser,
+					new StandardCategoryItemLabelGenerator("{2}", NumberFormat.getInstance(Locale.GERMAN)));
+			renderer.setSeriesItemLabelsVisible(ser, true);
 			color++;
 			if (COLORS.length == color) {
 				color = 0;
@@ -241,9 +322,11 @@ public class AnalyticsView extends Composite {
 					// cmbReports.getItem(cmbReports.getSelectionIndex())
 					Formatter.formatValue(book.getLiabilityList().getValue(period.getId()).getEndOfPeriod()));
 		} else if (reportSel.equals(App.getGuiProp("report.allperiods.capital"))) {
-			chart = createLineChart(createDatasetPeriod(true), cmbReports.getItem(cmbReports.getSelectionIndex()));
+			chart = createLineChart(createDatasetPeriod(0), cmbReports.getItem(cmbReports.getSelectionIndex()));
 		} else if (reportSel.equals(App.getGuiProp("report.allperiods.pl"))) {
-			chart = createLineChart(createDatasetPeriod(false), cmbReports.getItem(cmbReports.getSelectionIndex()));
+			chart = createLineChart(createDatasetPeriod(1), cmbReports.getItem(cmbReports.getSelectionIndex()));
+		} else if (reportSel.equals(App.getGuiProp("report.profit"))) {
+			chart = createBarChart(createDatasetPeriod(2), cmbReports.getItem(cmbReports.getSelectionIndex()));
 		}
 		if (chart == null) {
 			return;
@@ -309,10 +392,12 @@ public class AnalyticsView extends Composite {
 	 * 
 	 * @return
 	 */
-	protected CategoryDataset createDatasetPeriod(boolean capital) {
+	protected CategoryDataset createDatasetPeriod(int type) {
 		Book book = App.getApp().getBookFile().getBook();
 		final DefaultCategoryDataset dataset = new DefaultCategoryDataset();
 		List<Period> periodList = book.getPeriodList();
+		List<Double> movingAverage = new ArrayList<Double>();
+		double MA_SIZE = 12.0;
 		for (Period period : periodList) {
 			Folder assets = book.getAssetList();
 			double assetValue = assets.getValue(period.getId()).getEndOfPeriod();
@@ -324,15 +409,29 @@ public class AnalyticsView extends Composite {
 			Folder expense = book.getExpenseList();
 			double expenseValue = expense.getValue(period.getId()).getCredit()
 					- expense.getValue(period.getId()).getDebit();
-			if (capital) {
+			if (type == 0) {// capital
 				if (assetValue != 0.0 || liabilityValue != 0.0) {
 					dataset.addValue(assetValue - liabilityValue, assets.getName() + " - " + liability.getName(),
-							Formatter.formatDateMonth(period.getDate()));
+							Formatter.formatDateShort(period.getDate()));
 				}
-			} else {
+			} else if (type == 1) {// income and expenses
 				if (incomeValue != 0.0 || expenseValue != 0.0) {
-					dataset.addValue(incomeValue, income.getName(), Formatter.formatDateMonth(period.getDate()));
-					dataset.addValue(expenseValue, expense.getName(), Formatter.formatDateMonth(period.getDate()));
+					dataset.addValue(incomeValue, income.getName(), Formatter.formatDateShort(period.getDate()));
+					dataset.addValue(expenseValue, expense.getName(), Formatter.formatDateShort(period.getDate()));
+					movingAverage.add(incomeValue - expenseValue);
+					double sum = 0.0;
+					for (double val : movingAverage) {
+						sum += val;
+					}
+					dataset.addValue(sum / MA_SIZE, (int)MA_SIZE + "m-Moving Average", Formatter.formatDateShort(period.getDate()));
+					if (movingAverage.size() == MA_SIZE) {
+						movingAverage.remove(0);
+					}
+				}
+			} else if (type == 2) {// profit and loss
+				if (incomeValue != 0.0 || expenseValue != 0.0) {
+					dataset.addValue(incomeValue - expenseValue, income.getName(),
+							Formatter.formatDateShort(period.getDate()));
 				}
 			}
 		}

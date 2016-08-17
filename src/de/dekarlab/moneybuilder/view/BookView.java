@@ -152,7 +152,11 @@ public class BookView extends Composite {
 		GridLayout layout = new GridLayout();
 		layout.numColumns = 4;
 		setLayout(layout);
-		sashForm = new SashForm(this, SWT.VERTICAL);
+		if (!App.getGuiProp("app.tab.sash.horizontal").equals("true")) {
+			sashForm = new SashForm(this, SWT.VERTICAL);
+		} else {
+			sashForm = new SashForm(this, SWT.HORIZONTAL);
+		}
 		sashForm.setSashWidth(5);
 		sashForm.setBackground(sashForm.getDisplay().getSystemColor(SWT.COLOR_GRAY));
 		sashForm.setLayout(new GridLayout());
@@ -174,7 +178,7 @@ public class BookView extends Composite {
 		FontDescriptor advFondDescr = FontDescriptor.createFrom(lblBts.getFont()).setStyle(SWT.ITALIC).setHeight(8);
 		Font advFont = advFondDescr.createFont(lblBts.getDisplay());
 		lblBts.setFont(advFont);
-		String url = "http://BehindTheStrategy.com";
+		final String url = "http://BehindTheStrategy.com";
 		lblBts.setText("<a>" + url + "</a> - Find Your Investment Strategy");
 		lblBts.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
@@ -263,7 +267,7 @@ public class BookView extends Composite {
 		};
 		gridSnapshot.addListener(SWT.Collapse, listener);
 		gridSnapshot.addListener(SWT.Expand, listener);
-		Listener editListener = getEditSnapshotListener();
+		final Listener editListener = getEditSnapshotListener();
 
 		gridSnapshot.addListener(SWT.MouseDoubleClick, editListener);
 		gridSnapshot.addTraverseListener(new TraverseListener() {
@@ -277,7 +281,7 @@ public class BookView extends Composite {
 		});
 		gridSnapshot.addKeyListener(getDeleteInsertSnapshotListener());
 		// popup menu
-		Menu popupMenu = new Menu(gridSnapshot);
+		final Menu popupMenu = new Menu(gridSnapshot);
 		gridSnapshot.setMenu(popupMenu);
 		gridSnapshot.addMenuDetectListener(new MenuDetectListener() {
 			@Override
@@ -348,7 +352,7 @@ public class BookView extends Composite {
 		gridTrans.setFooterVisible(true);
 		gridTrans.setCellSelectionEnabled(true);
 
-		Listener editListener = getEditTransactionListener();
+		final Listener editListener = getEditTransactionListener();
 
 		gridTrans.addListener(SWT.MouseDoubleClick, editListener);
 		gridTrans.addTraverseListener(new TraverseListener() {
@@ -562,7 +566,7 @@ public class BookView extends Composite {
 
 			@Override
 			public void handleEvent(Event arg0) {
-				Book book = App.getApp().getBookFile().getBook();
+				final Book book = App.getApp().getBookFile().getBook();
 				// New transaction if the field is empty
 				if (gridTrans.getItemCount() == 0) {
 					List<Account> lstAcnt = book.getAccountList();
@@ -574,11 +578,11 @@ public class BookView extends Composite {
 				}
 				// Editing of transaction
 				if (gridTrans.getCellSelectionCount() == 1) {
-					Point point = gridTrans.getCellSelection()[0];
+					final Point point = gridTrans.getCellSelection()[0];
 					if (point.x == TRANS_COL_FROM || point.x == TRANS_COL_TO) {
 						Transaction tran = (Transaction) gridTrans.getItem(point.y).getData();
 						GridEditor editor1 = new GridEditor(gridTrans);
-						Combo combo = new Combo(gridTrans, SWT.READ_ONLY);
+						final Combo combo = new Combo(gridTrans, SWT.READ_ONLY);
 
 						List<Account> listAcn = book.getAccountList();
 						int sel = 0;
@@ -653,7 +657,7 @@ public class BookView extends Composite {
 
 					if (point.x == TRANS_COL_VALUE || point.x == TRANS_COL_DESCR) {
 						GridEditor editor1 = new GridEditor(gridTrans);
-						Text text1 = new Text(gridTrans, point.x == TRANS_COL_DESCR ? SWT.LEFT : SWT.RIGHT);
+						final Text text1 = new Text(gridTrans, point.x == TRANS_COL_DESCR ? SWT.LEFT : SWT.RIGHT);
 						text1.setText(gridTrans.getItem(point.y).getText(point.x));
 						editor1.grabHorizontal = true;
 						editor1.setEditor(text1, gridTrans.getItem(point.y), point.x);
@@ -724,10 +728,10 @@ public class BookView extends Composite {
 			 */
 			@Override
 			public void handleEvent(Event arg0) {
-				Book book = App.getApp().getBookFile().getBook();
+				final Book book = App.getApp().getBookFile().getBook();
 				// Editing of snapshot
 				if (gridSnapshot.getCellSelectionCount() == 1) {
-					Point point = gridSnapshot.getCellSelection()[0];
+					final Point point = gridSnapshot.getCellSelection()[0];
 					if (point.x == SNPSH_COL_ACNT || point.x == SNPSH_COL_BUDGET || point.x == SNPSH_COL_EOP) {
 						Account acnt = (Account) gridSnapshot.getItem(point.y).getData();
 						if (!(acnt instanceof Folder) || (point.x == SNPSH_COL_ACNT && acnt.getParent() != null)) {
@@ -740,7 +744,7 @@ public class BookView extends Composite {
 								return;
 							}
 							GridEditor editor1 = new GridEditor(gridSnapshot);
-							Text text1 = new Text(gridSnapshot, SWT.RIGHT);
+							final Text text1 = new Text(gridSnapshot, SWT.RIGHT);
 							text1.setText(gridSnapshot.getItem(point.y).getText(point.x));
 							editor1.grabHorizontal = true;
 							editor1.setEditor(text1, gridSnapshot.getItem(point.y), point.x);
@@ -1106,7 +1110,7 @@ public class BookView extends Composite {
 	 * @param column
 	 * @return
 	 */
-	public SelectionListener getSortListener(GridColumn column) {
+	public SelectionListener getSortListener(final GridColumn column) {
 		SelectionListener listener = new SelectionListener() {
 			@Override
 			public void widgetSelected(SelectionEvent arg0) {

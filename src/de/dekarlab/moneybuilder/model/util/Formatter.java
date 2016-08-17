@@ -90,6 +90,19 @@ public class Formatter {
 		SimpleDateFormat sd = new SimpleDateFormat("yyyyMM");
 		return sd.format(date);
 	}
+	/**
+	 * Format date.
+	 * 
+	 * @param date
+	 * @return
+	 */
+	public static String formatDateShort(Date date) {
+		if (date == null) {
+			return "";
+		}
+		SimpleDateFormat sd = new SimpleDateFormat("MM.yyyy");
+		return sd.format(date);
+	}
 
 	/**
 	 * Parse date.
